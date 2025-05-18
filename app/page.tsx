@@ -1,103 +1,73 @@
+"use client"
 import Image from "next/image";
+import { ChangeEventHandler, useEffect, useState } from "react";
+import 'katex/dist/katex.min.css';
+import Latex from 'react-latex-next';
+import { matrix, Matrix, multiply, index, row, MathNumericType } from 'mathjs';
+import { gaussJordanModSteps, math, matrixToLatex } from "./gauss";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [matrix, setMatrix] = useState<Matrix>();
+  const [output, setOutput] = useState<string[]>([]);
+  const [parseErr, setParseErr] = useState(false);
+  const [mod, setMod] = useState(1);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  useEffect(() => {
+    if (matrix) {
+      const steps = gaussJordanModSteps(matrix, mod);
+      const output = steps.map(el => matrixToLatex(el))
+      setOutput(output);
+    }
+  }, [matrix, mod]);
+
+  const handleMatrix = (value: string): void => {
+    try {
+      const matrix = parseMatrixString(value);
+      setParseErr(false);
+      setMatrix(matrix);
+    } catch (error) {
+      console.error("Invalid matrix format", error);
+      setParseErr(true);
+      setMatrix(math.matrix());
+    }
+  }
+  return (
+    <div className="p-5 flex flex-col max-w-64 gap-5">
+      <h1 className="font-bold text-2xl">Gauss-jordan algorithm</h1>
+      <div>
+        <label htmlFor="matrix" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Matrix</label>
+        <textarea id="matrix" rows={4} className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 font-mono" placeholder={"1 2 4 5\n4 5 6 7\n8 9 1 2"} onChange={(e) => handleMatrix(e.target.value)}></textarea>
+        {parseErr && <p className="mt-2 text-sm text-red-600 dark:text-red-500">Parsing error</p>}
+      </div>
+      <div>
+        <label htmlFor="modulo" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modulo</label>
+        <input type="text" id="modulo" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 font-mono" value={mod} onChange={(e) => setMod(e.target.value == "" ? 0 : parseInt(e.target.value))}required />
+      </div>
+      {output.length > 0 && 
+      <div className="flex flex-col gap-2">
+        <h1 className="font-bold text-xl">Output</h1>
+        {output.map((el, i) => (
+          <div key={i} className="flex flex-col gap-2">
+            {i+1 === output.length ?  <div>Final result:</div> : <div>Step {i+1}:</div>}
+            <Latex>{`$` + el + `$`}</Latex>
+          </div>
+        ))}
+      </div>
+      }
+      <p className="text-gray-500">Disclaimer: Not guarantee of correctness. Code includes AI-generated content. </p>
     </div>
   );
 }
+
+const parseMatrixString = (value: string): Matrix => {
+  // Split the string by newlines to get rows
+  const rows = value.trim().split('\n');
+  
+  // Parse each row into an array of numbers
+  const matrixArray = rows.map(row => 
+    row.trim().split(/\s+/).map(num => parseFloat(num))
+  );
+  
+  // Create a mathjs matrix
+  return matrix(matrixArray);
+};
