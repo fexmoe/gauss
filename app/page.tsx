@@ -54,7 +54,7 @@ export default function Home() {
         ))}
       </div>
       }
-      <p className="text-gray-500">Disclaimer: Not guarantee of correctness. Code includes AI-generated content. </p>
+      <p className="text-gray-500">Disclaimer: No guarantee of correctness. Code includes AI-generated content. </p>
     </div>
   );
 }
